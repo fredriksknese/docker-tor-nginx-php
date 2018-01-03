@@ -22,8 +22,7 @@ RUN		chmod +x /bin/entry
 
 VOLUME  ["/var/hs/"]
 
-#ENTRYPOINT	["/sbin/init"]
 ENTRYPOINT	["/bin/entry"]
-
+#ENTRYPOINT	["/bin/ash"]
 
 EXPOSE 80/tcp
