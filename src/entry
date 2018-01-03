@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "Starting..."
+parallel -j 99 --halt now,fail=1 ::: "nginx &> /dev/null; tor &> /dev/null; php-fpm7 &> /dev/null; watchauto &> /dev/null;"
+echo "Exiting...."
