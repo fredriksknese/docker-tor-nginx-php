@@ -1,0 +1,58 @@
+#!/bin/sh
+echo '/#?<>' > /tmp/olddirsum
+while true
+do
+	ls -l /var/hs/ > /tmp/dirresult
+	DIFF=$(diff /tmp/dirresult /tmp/olddirsum)
+	
+	if [ "$DIFF" != "" ] 
+	then
+		cp /tmp/dirresult /tmp/olddirsum
+		echo "" > /tmp/hiddenservices.conf
+		echo "" > /etc/tor/torrc
+		echo "SocksPort 0" > /etc/tor/torrc.tmp
+		TMPDD=$(sudo -u \#101 mktemp -d)
+		TMPHS=$(sudo -u \#101 mktemp -d)
+		#echo "DD: $TMPDD"
+		#echo "HS: $TMPHS"
+		
+		echo "DataDirectory $TMPDD" >> /etc/tor/torrc.tmp
+		
+		for dir in $(ls -d /var/hs/*/ | xargs -n 1 basename); do
+			mkdir $TMPHS/$dir
+			cp /var/hs/$dir/hostname $TMPHS/$dir/hostname &> /dev/null
+			cp /var/hs/$dir/private_key $TMPHS/$dir/private_key &> /dev/null
+		done
+		for dir in $(ls -d /var/hs/*/ | xargs -n 1 basename); do
+			echo "HiddenServiceDir $TMPHS/$dir" >> /etc/tor/torrc.tmp
+			echo "HiddenServicePort 80 127.0.0.1:8000" >> /etc/tor/torrc.tmp
+		done
+		
+		chown -R 101 $TMPDD
+		chmod -R 0700 $TMPDD
+		
+		chown -R 101 $TMPHS
+		chmod -R 0700 $TMPHS
+		
+		timeout -t 10 sudo -u \#101 tor -f /etc/tor/torrc.tmp &> /dev/null
+		
+		for dir in $(ls -d /var/hs/*/ | xargs -n 1 basename); do
+			cat /var/hs.tmpl >> /tmp/hiddenservices.conf
+			echo "" >> /tmp/hiddenservices.conf
+			sed -i "s|DIRNAME|/var/hs/$dir|g" /tmp/hiddenservices.conf
+			sed -i "s|HOSTNAME|$(cat $TMPHS/$dir/hostname)|g" /tmp/hiddenservices.conf
+		done
+
+		cp -fR $TMPHS/* /var/hs/
+		
+		cat /etc/tor/torrc.tmp > /etc/tor/torrc
+		rm /etc/tor/torrc.tmp
+		rm -rf $TMPDD
+		rm -rf $TMPHS
+		
+		rc-service tor reload 
+		rc-service nginx reload
+	fi
+	sleep 10
+done
+echo "Exiting"
