@@ -7,7 +7,7 @@ echo '/#?<>' > /tmp/olddirsum
 while true
 do
 	# docker and inotify/watch does not work very well with Windows. Polling is a proven concept
-	ls -l /var/hs/ > /tmp/dirresult
+	ls -l -d /var/hs/ > /tmp/dirresult
 	DIFF=$(diff /tmp/dirresult /tmp/olddirsum)
 	
 	if [ "$DIFF" != "" ] 
@@ -27,8 +27,8 @@ do
 		done
 
 		for dir in $(ls -d /var/hs/*/ | xargs -n 1 basename); do
-			echo "HiddenServiceDir /var/hsdir/$dir" >> /etc/tor/torrc.tmp
-			echo "HiddenServicePort 80 127.0.0.1:8000" >> /etc/tor/torrc.tmp
+			echo "HiddenServiceDir /var/hsdir/$dir" >> /etc/tor/torrc
+			echo "HiddenServicePort 80 127.0.0.1:8000" >> /etc/tor/torrc
 		done
 
 		chmod -R 0700 /var/hsdir/
@@ -47,11 +47,13 @@ do
 		
 		# copy back hostnames and private_key
 		cp -u -R /var/hsdir/* /var/hs/
-		
-		cat /etc/tor/torrc.tmp > /etc/tor/torrc
-		rm /etc/tor/torrc.tmp
-		
+	
+		#reload nginx
 		killall -s HUP nginx
+
+		#cat /etc/tor/torrc
+		#cat /tmp/hiddenservices.conf
+
 	fi
 	sleep 10
 done

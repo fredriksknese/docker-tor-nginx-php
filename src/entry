@@ -1,4 +1,4 @@
-#!/usr/bin/parallel --shebang -j 99 --line-buffer --halt now,fail=1
+#!/usr/bin/parallel --shebang -j 99 --line-buffer --halt now,fail=1 --termseq INT,200,TERM,100,KILL,25
 nginx
 tor
 php-fpm7
